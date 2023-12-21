@@ -2,7 +2,7 @@
 
 
 #include <chrono>
-#include <SDL2/SDL.h>
+#include <SFML/Graphics.hpp>
 
 #include "rendering/renderer.hpp"
 
@@ -21,12 +21,12 @@ public:
     void handle_events(double dt);
 
 private:
+
+    sf::RenderWindow window;
+    sf::Event event;
+
     camera _camera;
     map _map;
     renderer _renderer;
     bool running = true;
-
-    SDL_Window* sdl_window;
-    SDL_Renderer* sdl_renderer;
-    SDL_Event sdl_event;
 };

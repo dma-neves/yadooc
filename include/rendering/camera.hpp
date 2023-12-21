@@ -1,6 +1,6 @@
 #pragma once
 
-#include "util/vec3.hpp"
+#include <SFML/Graphics.hpp>
 
 #define MAX_VERTICAL_TILT 0.785
 
@@ -10,11 +10,9 @@
 class camera {
 
 public:
-    static const vec3 default_direction;
-    static const vec3 default_position;
 
-    vec3 pos;
-    vec3 direction;
+    sf::Vector3f pos;
+    sf::Vector3f direction;
 
-    camera(vec3 pos = DEFAULT_POSITION, vec3 direction = DEFAULT_DIRECTION);
+    camera(sf::Vector3f pos = DEFAULT_POSITION, sf::Vector3f direction = DEFAULT_DIRECTION);
 };

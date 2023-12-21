@@ -1,5 +1,5 @@
 #include "rendering/camera.hpp"
 
-camera::camera(vec3 pos, vec3 direction) : pos(pos), direction(direction) {
+camera::camera(sf::Vector3f pos, sf::Vector3f direction) : pos(pos), direction(direction) {
         
 }

@@ -1,7 +1,7 @@
 #include "rendering/renderer.hpp"
 #include <cmath>
 
-renderer::renderer(double fov, comp_t plane_distance) : plane_distance(plane_distance) {
+renderer::renderer(camera* _camera, double fov, float plane_distance) : _camera(_camera), plane_distance(plane_distance) {
 
     plane_width = 2.0 * plane_distance * tan(fov/2.0);
 }
@@ -11,21 +11,37 @@ renderer::~renderer() {
     for(auto& entry : textures) {
 
         texture& tex = entry.second;
-        SDL_DestroyTexture(tex.texture);
-        delete tex.rect;
+        delete tex.texture;
     }
 }
 
-void renderer::render_prism(SDL_Window* sdl_window, SDL_Renderer* sdl_renderer, prism& _prism) {
+void renderer::render_vertical_surface(sf::RenderWindow* window, vertical_surface& surface) {
 
+    // In order to get the texture to shear, we first define the
+    // convex shape as a non sheared rectangle based on the surface's coordinates
+    // and then draw the shape with the appropriate shear transform
 
+    sf::ConvexShape surface_shape;
+    surface_shape.setPoint(0, surface.top_left);
+    surface_shape.setPoint(1, sf::Vector2f(surface.top_right.x, surface.top_left.y));
+    surface_shape.setPoint(3, sf::Vector2f(surface.bot_right.x, surface.bot_left.y));
+    surface_shape.setPoint(2, surface.bot_left);
 
-    //SDL_RenderCopy(rend, tex, NULL, &dest);
+    float dy = surface.top_right.y - surface.top_left.y;
+    auto shear_transform = shear_around(surface.top_left, dy);
+
+    window->draw(surface_shape, shear_transform);
 }
 
-void renderer::render(SDL_Window* sdl_window, SDL_Renderer* sdl_renderer, map _map, camera _camera) {
+void renderer::render_prism(sf::RenderWindow* window, prism& _prism) {
 
-        //SDL_RenderCopy(rend, tex, NULL, &dest);
+    for(sf::Vector2f& edge : _prism.edges) {
+
+        float projection_plane_x_pos = project_point(edge);
+    }
+}
+
+void renderer::render(sf::RenderWindow* window, map& _map) {
 
     // TODO: sort prisms in render order
 
@@ -36,43 +52,57 @@ void renderer::render(SDL_Window* sdl_window, SDL_Renderer* sdl_renderer, map _m
 
     // TEST
 
-    texture& tex = textures.find("stone_wall")->second;
-    // tex.rect->x = 200;
-    // tex.rect->y = 200;
-    // tex.rect->w = 150;
-    // tex.rect->h = 100;
+    // texture& tex = textures.find("stone_wall")->second;
 
-    // SDL_RenderCopy(sdl_renderer, tex.texture, NULL, tex.rect);
+    // // Define the polygon vertices
+    // sf::ConvexShape polygon;
+    // polygon.setPointCount(4); // Change this to the number of vertices in your polygon
+
+    // // Set the position of each vertex
+    // polygon.setPoint(0, sf::Vector2f(100, 100));
+    // polygon.setPoint(1, sf::Vector2f(200, 100));
+    // polygon.setPoint(2, sf::Vector2f(200, 200));
+    // polygon.setPoint(3, sf::Vector2f(100, 200));
+
+    // polygon.setTexture(tex.texture);
+
+    // window->draw(polygon, shear_around(polygon.getPoint(0), 0.2f));
 
 
-    SDL_Rect srcRect = *tex.rect; // { 0, 0, 128, 128 }; // Source rectangle (entire texture)
-    SDL_FRect destRect = { 300, 300, 100, 100 }; // Destination rectangle (parallelogram)
+
+    // polygon.setPoint(0, sf::Vector2f(300, 100));
+    // polygon.setPoint(1, sf::Vector2f(400, 100));
+    // polygon.setPoint(2, sf::Vector2f(400, 200));
+    // polygon.setPoint(3, sf::Vector2f(300, 200));
 
 
-    //     // Define the destination parallelogram (sheared rectangle)
-    // SDL_FRect destRect = { x1, y1, parallelogramWidth, parallelogramHeight };
+    // polygon.setTexture(tex.texture);
 
-    // Apply shearing transformation
-    SDL_FPoint center = { destRect.x + destRect.w / 2, destRect.y + destRect.h / 2 };
-    SDL_RenderCopyExF(sdl_renderer, tex.texture, &srcRect, &destRect, 0, NULL, SDL_FLIP_NONE);
-
-    // SDL_RenderCopyEx(sdl_renderer, tex.texture, &srcRect, &destRectInt, 0.0, NULL, SDL_FLIP_NONE);
+    // window->draw(polygon);
 }
 
-void renderer::load_texture(SDL_Renderer* sdl_renderer, std::string id, std::string texture_file) {
+void renderer::load_texture(std::string id, std::string texture_file) {
 
-    SDL_Surface* surface = IMG_Load(texture_file.c_str());
-    if (!surface) {
-        
-        printf("Failed to load image: %s\n", IMG_GetError());
+    sf::Texture* tex = new sf::Texture;
+    if (!tex->loadFromFile(texture_file)) {
+        printf("Failed to load image %s\n", texture_file);
     }
     else {
 
-        SDL_Texture* tex = SDL_CreateTextureFromSurface(sdl_renderer, surface);
-        SDL_Rect* rect = new SDL_Rect();
-        SDL_QueryTexture(tex, NULL, NULL, &rect->w, &rect->h);
-
-        textures.insert( { id, {id, tex, rect} });
-        SDL_FreeSurface(surface);
+        textures.insert({id, {id,tex}});
     }
+}
+
+
+float renderer::project_point(sf::Vector2f& point) {
+
+    sf::Vector2f camera_dir = sf::Vector2f(_camera->direction.x, _camera->direction.y);
+    sf::Vector2f camera_pos = sf::Vector2f(_camera->pos.x, _camera->pos.y);
+    sf::Vector2f point_relative_position = point - camera_pos;
+
+    float alpha = angle_between_vectors(camera_dir, point_relative_position);
+    float dx = plane_distance * tan(fabs(alpha));
+    float projection_plane_pos_x = alpha > 0.f ? plane_width/2.f - dx : plane_width/2.f + dx;
+
+    return projection_plane_pos_x;
 }

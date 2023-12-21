@@ -3,9 +3,10 @@
 #include "map/map.hpp"
 #include "camera.hpp"
 #include "util/texture.hpp"
+#include "util/lalgebra.hpp"
+#include "util/vertical_surface.hpp"
 
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_image.h>
+#include <SFML/Graphics.hpp>
 #include <string>
 #include <unordered_map>
 
@@ -13,18 +14,21 @@ class renderer {
 
 public:
 
-    renderer(double fov = 0.785, comp_t plane_distance = 1.0f);
+    renderer(camera* _camera, double fov = 0.785, float plane_distance = 1.0f);
     ~renderer();
 
-    void render(SDL_Window* sdl_window, SDL_Renderer* sdl_renderer, map _map, camera _camera);
-    void load_texture(SDL_Renderer* sdl_renderer, std::string id, std::string texture_file);
+    void render(sf::RenderWindow* window, map& _map);
+    void load_texture(std::string id, std::string texture_file);
 
 private:
 
-    void render_prism(SDL_Window* sdl_window, SDL_Renderer* sdl_renderer, prism& _prism);
+    void render_prism(sf::RenderWindow* window, prism& _prism);
+    void render_vertical_surface(sf::RenderWindow* window, vertical_surface& surface);
+    float project_point(sf::Vector2f& point);
 
-    comp_t plane_distance;
-    comp_t plane_width;
+    camera* _camera;
+    float plane_distance;
+    float plane_width;
 
     std::unordered_map<std::string, texture> textures;
 };

@@ -2,12 +2,11 @@
 
 #include <vector>
 #include <string>
-
-#include "util/vec2.hpp"
+#include <SFML/Graphics.hpp>
 
 struct prism {
 
-    std::vector<vec2> edges;
+    std::vector<sf::Vector2f> edges;
     std::vector<std::string> surface_texture_ids;
-    comp_t height;
+    float height;
 };
