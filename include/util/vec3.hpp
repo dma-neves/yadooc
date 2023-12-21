@@ -7,5 +7,5 @@ class vec3 {
 public:
     comp_t x,y,z;
 
-    vec3(comp_t x, comp_t y, comp_t z) : x(x), y(x), z(z);
+    vec3(comp_t x, comp_t y, comp_t z);
 };

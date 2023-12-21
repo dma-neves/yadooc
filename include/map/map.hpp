@@ -6,6 +6,6 @@
 
 class map {
 
-
+public:
     std::vector<prism> prisms;
 };
