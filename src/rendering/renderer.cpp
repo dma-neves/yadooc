@@ -45,29 +45,11 @@ vertical_surface renderer::compute_surface(sf::RenderWindow* window, projection&
         projection& projection_left_edge = a_left_of_b ? projection_a : projection_b;
         projection& projection_right_edge = a_left_of_b ? projection_b : projection_a;
 
-        float projection_plane_x_left = projection_left_edge.projection_plane_x; 
-        float projection_plane_x_right = projection_right_edge.projection_plane_x;
-        float distance_left = projection_left_edge.distance; 
-        float distance_right = projection_right_edge.distance;
-
-        float height_left = projected_height(distance_left, height );
-        float height_right = projected_height(distance_right, height );
-
-        float camera_height_offset_left =  _camera->pos.z * (height_left/2.f);
-        float camera_height_offset_right =  _camera->pos.z * (height_right/2.f);
-        float camera_vertical_rotation_offset = sin(_camera->vertical_rot_angle);
-
-        float projection_plane_y_left = (plane_height-height_left)/2.f + camera_height_offset_left + camera_vertical_rotation_offset;
-        float projection_plane_y_right = (plane_height-height_right)/2.f + camera_height_offset_right + camera_vertical_rotation_offset;
-
-        float w_scale = window->getSize().x / plane_width;
-        float y_scale = window->getSize().y / plane_height;
-
         vertical_surface vs = {
-            .top_left = { w_scale * projection_plane_x_left, y_scale * projection_plane_y_left },
-            .top_right = { w_scale * projection_plane_x_right, y_scale * projection_plane_y_right },
-            .bot_left = { w_scale * projection_plane_x_left, y_scale * (projection_plane_y_left+height_left) },
-            .bot_right = { w_scale * projection_plane_x_right, y_scale * (projection_plane_y_right+height_right) },
+            .top_left = { projection_left_edge.projection_plane_x, projection_left_edge.projection_plane_y_top },
+            .top_right = { projection_right_edge.projection_plane_x, projection_right_edge.projection_plane_y_top },
+            .bot_left = { projection_left_edge.projection_plane_x, projection_left_edge.projection_plane_y_bot },
+            .bot_right = { projection_right_edge.projection_plane_x, projection_right_edge.projection_plane_y_bot },
             .texture_id = texture_id
         };
 
@@ -76,7 +58,7 @@ vertical_surface renderer::compute_surface(sf::RenderWindow* window, projection&
 
 void renderer::render_prism(sf::RenderWindow* window, prism& _prism) {
 
-    std::vector<projection> projections = compute_prism_projections(_prism);
+    std::vector<projection> projections = compute_prism_projections(window, _prism);
 
     if(projections.size() != _prism.edges.size()) {
 
@@ -104,8 +86,8 @@ void renderer::render_prism(sf::RenderWindow* window, prism& _prism) {
     bool backwards_iteration = projections[prev_index].distance > projections[leftmost_edge_index].distance;
     int increment = backwards_iteration ? -1 : 1;
 
-    std::vector<vertical_surface> vertical_surfaces;
-    for(int i = leftmost_edge_index; vertical_surfaces.size() < nsurfaces; i = modulo(i+increment, nsurfaces)) {
+    int rendered_surfaces = 0;
+    for(int i = leftmost_edge_index; rendered_surfaces < nsurfaces; i = modulo(i+increment, nsurfaces)) {
 
         int next_index = modulo(i+increment, nsurfaces);
         int texture_id_index = backwards_iteration ? next_index : i;
@@ -113,34 +95,33 @@ void renderer::render_prism(sf::RenderWindow* window, prism& _prism) {
 
         vertical_surface vs = compute_surface(window, projections[i], projections[next_index], _prism.height, texture_id);
         render_vertical_surface(window, vs);
-        vertical_surfaces.push_back(vs);
+        rendered_surfaces++;
     }
     
-    if(_camera->pos.z != 0) {
+    if(fabs(_camera->pos.z) > _prism.height/2.f) {
 
         // Render horizontal surface
-
         sf::ConvexShape horizontal_surface;
         horizontal_surface.setPointCount(nedges);
-        for(int i = 0; i < vertical_surfaces.size(); i++) {
+        for(int i = 0; i < projections.size(); i++) {
 
             if(_camera->pos.z > 0) {
-                horizontal_surface.setPoint(i, vertical_surfaces[i].top_left);
+                sf::Vector2f top_corner(projections[i].projection_plane_x, projections[i].projection_plane_y_top);
+                horizontal_surface.setPoint(i,top_corner);
             }
             else if (_camera->pos.z < 0){
-                horizontal_surface.setPoint(i, vertical_surfaces[i].bot_left);
+                sf::Vector2f bot_corner(projections[i].projection_plane_x, projections[i].projection_plane_y_bot);
+                horizontal_surface.setPoint(i, bot_corner);
             }
         }
 
-        printf("nedges: %d\n", nedges);
-
-        horizontal_surface.setFillColor(sf::Color(128, 128, 128));
+        horizontal_surface.setFillColor(sf::Color(64, 64, 64));
+        // horizontal_surface.setTexture(textures.find("stone_wall")->second.sf_texture);
         window->draw(horizontal_surface);
     }
 }
 
-std::vector<projection> renderer::compute_prism_projections(prism& _prism) {
-
+std::vector<projection> renderer::compute_prism_projections(sf::RenderWindow* window, prism& _prism) {
 
     std::vector<projection> projections;
     for(auto& edge : _prism.edges) {
@@ -151,15 +132,27 @@ std::vector<projection> renderer::compute_prism_projections(prism& _prism) {
             sf::Vector2f rel_pos = edge - camera_pos_2f;
             float distance = magnitude(rel_pos);
 
+            float height = projected_height(distance, _prism.height);
+            float camera_height_offset =  _camera->pos.z * (height/2.f);
+            float camera_vertical_rotation_offset = sin(_camera->vertical_rot_angle);
+
+            float projection_plane_y_top = (plane_height-height)/2.f + camera_height_offset + camera_vertical_rotation_offset;
+            float projection_plane_y_bot = projection_plane_y_top + height;
+
+            float x_scale = window->getSize().x / plane_width;
+            float y_scale = window->getSize().y / plane_height;
+
             projections.push_back({
                 .distance = distance,
-                .projection_plane_x = projection_plane_x
+                .projection_plane_x = x_scale * projection_plane_x,
+                .projection_plane_y_top = y_scale * projection_plane_y_top,
+                .projection_plane_y_bot = y_scale * projection_plane_y_bot
             });
         }
         catch(const std::exception& e) {
 
             // surface behind camera
-            printf("exception\n");
+            // printf("exception\n");
         }    
     }
 

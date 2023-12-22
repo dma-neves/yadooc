@@ -19,7 +19,23 @@ yar::yar() : window(sf::VideoMode(800, 800), "yar"), _camera(),  _renderer(&_cam
         .surface_texture_ids = surface_texture_ids,
         .height = 2
     };
+
     _map.prisms.push_back(p);
+
+    std::vector<sf::Vector2f> edges_2 = { 
+        sf::Vector2f(13,-1), 
+        sf::Vector2f(13,1), 
+        sf::Vector2f(15,-1),
+    };
+    std::vector<std::string> surface_texture_ids_2 = {"stone_wall", "stone_wall", "stone_wall"};
+
+    prism p_2 = {
+        .edges = edges_2,
+        .surface_texture_ids = surface_texture_ids_2,
+        .height = 3
+    };
+
+    _map.prisms.push_back(p_2);
 
     keys_pressed.insert({sf::Keyboard::Escape, false});
     keys_pressed.insert({sf::Keyboard::W, false});
