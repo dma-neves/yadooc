@@ -6,5 +6,5 @@
 struct texture {
 
     std::string id;
-    sf::Texture* texture;
+    sf::Texture* sf_texture;
 };

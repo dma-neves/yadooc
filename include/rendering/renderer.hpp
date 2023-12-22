@@ -4,7 +4,7 @@
 #include "camera.hpp"
 #include "util/texture.hpp"
 #include "util/lalgebra.hpp"
-#include "util/vertical_surface.hpp"
+#include "rendering/vertical_surface.hpp"
 
 #include <SFML/Graphics.hpp>
 #include <string>
@@ -20,15 +20,21 @@ public:
     void render(sf::RenderWindow* window, map& _map);
     void load_texture(std::string id, std::string texture_file);
 
+
+    int iter_dir = 1;
+
 private:
 
     void render_prism(sf::RenderWindow* window, prism& _prism);
     void render_vertical_surface(sf::RenderWindow* window, vertical_surface& surface);
     float project_point(sf::Vector2f& point);
+    float projected_height(float distance, float real_height);
+    std::vector<vertical_surface> compute_surfaces(sf::RenderWindow* window, prism& _prism);
 
     camera* _camera;
     float plane_distance;
     float plane_width;
+    float plane_height;
 
     std::unordered_map<std::string, texture> textures;
 };

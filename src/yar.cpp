@@ -2,6 +2,37 @@
 
 yar::yar() : window(sf::VideoMode(800, 800), "yar"), _camera(),  _renderer(&_camera) {
 
+    _renderer.load_texture("stone_wall", "../../../assets/sprites/Stone.png");
+
+    std::vector<sf::Vector2f> edges = { 
+        sf::Vector2f(3,-1), 
+        sf::Vector2f(3,1), 
+        sf::Vector2f(5,1),
+        sf::Vector2f(5,-1),
+    };
+    std::vector<std::string> surface_texture_ids = {"stone_wall", "stone_wall", "stone_wall", "stone_wall"};
+
+    prism p = {
+        .edges = edges,
+        .surface_texture_ids = surface_texture_ids,
+        .height = 2
+    };
+    _map.prisms.push_back(p);
+
+    keys_pressed.insert({sf::Keyboard::Escape, false});
+    keys_pressed.insert({sf::Keyboard::W, false});
+    keys_pressed.insert({sf::Keyboard::A, false});
+    keys_pressed.insert({sf::Keyboard::S, false});
+    keys_pressed.insert({sf::Keyboard::D, false});
+    keys_pressed.insert({sf::Keyboard::Space, false});
+    keys_pressed.insert({sf::Keyboard::LControl, false});
+    keys_pressed.insert({sf::Keyboard::Left, false});
+    keys_pressed.insert({sf::Keyboard::Right, false});
+    keys_pressed.insert({sf::Keyboard::Up, false});
+    keys_pressed.insert({sf::Keyboard::Down, false});
+
+    keys_pressed.insert({sf::Keyboard::I, false});
+
 }
 
 yar::~yar() {
@@ -17,8 +48,6 @@ void yar::run() {
     using duration_t = std::chrono::duration<double>;
 
     time_t previous_time = clock_t::now();
-
-    _renderer.load_texture("stone_wall", "../../../assets/sprites/Stone.png");
 
     while(running) {
 
@@ -60,14 +89,82 @@ void yar::handle_events(double dt) {
             break;
 
         case sf::Event::KeyPressed:
-            if(event.key.code == sf::Keyboard::Escape) {
+            keys_pressed.find(event.key.code)->second =  true;
 
-                window.close();
-                running = false;
+            if(event.key.code == sf::Keyboard::I) {
+                _renderer.iter_dir *= -1;
+                printf("iter dir: %d\n", _renderer.iter_dir);
             }
-        
-        default:
+
+            break;
+
+        case sf::Event::KeyReleased:
+            keys_pressed.find(event.key.code)->second =  false;
             break;
         }
+    }
+
+    handle_keys(dt);
+}
+
+void yar::handle_keys(double dt) {
+
+    if(keys_pressed.find(sf::Keyboard::Escape)->second) {
+
+        window.close();
+        running = false;
+    }
+    if(keys_pressed.find(sf::Keyboard::W)->second) {
+
+        float displacement = dt*CAMERA_SPEED;
+        _camera.pos += _camera.direction * displacement;
+    }
+    if(keys_pressed.find(sf::Keyboard::A)->second) {
+        
+        float displacement = dt*CAMERA_SPEED;
+        sf::Vector2f camera_dir_2f = {_camera.direction.x, _camera.direction.y};
+        sf::Vector2f rotated_camera_dir_2f = rotate_vector(camera_dir_2f, -M_PI/2.f);
+        sf::Vector3f rotated_camera_dir_3f = { rotated_camera_dir_2f.x, rotated_camera_dir_2f.y, _camera.direction.z };
+        _camera.pos += rotated_camera_dir_3f * displacement;
+    }
+    if(keys_pressed.find(sf::Keyboard::S)->second) {
+        
+        float displacement = -dt*CAMERA_SPEED;
+        _camera.pos += _camera.direction * displacement;
+    }
+    if(keys_pressed.find(sf::Keyboard::D)->second) {
+        
+
+        float displacement = dt*CAMERA_SPEED;
+        sf::Vector2f camera_dir_2f = {_camera.direction.x, _camera.direction.y};
+        sf::Vector2f rotated_camera_dir_2f = rotate_vector(camera_dir_2f, M_PI/2.f);
+        sf::Vector3f rotated_camera_dir_3f = { rotated_camera_dir_2f.x, rotated_camera_dir_2f.y, _camera.direction.z };
+        _camera.pos += rotated_camera_dir_3f * displacement;
+    }
+    if(keys_pressed.find(sf::Keyboard::Left)->second) {
+
+        float rot_angle = -dt * CAMERA_ROT_SPEED;
+        sf::Vector2f camera_dir_2f = {_camera.direction.x, _camera.direction.y};
+        camera_dir_2f = rotate_vector(camera_dir_2f, rot_angle);
+        _camera.direction.x = camera_dir_2f.x;
+        _camera.direction.y = camera_dir_2f.y;
+    }
+    if(keys_pressed.find(sf::Keyboard::Right)->second) {
+
+        float rot_angle = dt * CAMERA_ROT_SPEED;
+        sf::Vector2f camera_dir_2f = {_camera.direction.x, _camera.direction.y};
+        camera_dir_2f = rotate_vector(camera_dir_2f, rot_angle);
+        _camera.direction.x = camera_dir_2f.x;
+        _camera.direction.y = camera_dir_2f.y;
+    }
+    if(keys_pressed.find(sf::Keyboard::Space)->second) {
+
+        float displacement = dt*CAMERA_ROT_SPEED;
+        _camera.pos.z += displacement;
+    }
+    if(keys_pressed.find(sf::Keyboard::LControl)->second) {
+
+        float displacement = -dt*CAMERA_ROT_SPEED;
+        _camera.pos.z += displacement;
     }
 }

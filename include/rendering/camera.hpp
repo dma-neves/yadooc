@@ -4,8 +4,8 @@
 
 #define MAX_VERTICAL_TILT 0.785
 
-#define DEFAULT_POSITION {1.f, 0.f, 0.f}
-#define DEFAULT_DIRECTION {0.f, 0.f, 0.f}
+#define DEFAULT_POSITION {0.f, 0.f, 0.f}
+#define DEFAULT_DIRECTION {1.f, 0.f, 0.f}
 
 class camera {
 
