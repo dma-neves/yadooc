@@ -37,119 +37,133 @@ void renderer::render_vertical_surface(sf::RenderWindow* window, vertical_surfac
     states.texture = sf_texture;
 
     window->draw(surface_shape, states);
+}
 
+vertical_surface renderer::compute_surface(sf::RenderWindow* window, projection& projection_a, projection& projection_b, float height, std::string texture_id) {    
+
+        bool a_left_of_b = projection_a.projection_plane_x < projection_b.projection_plane_x;
+        projection& projection_left_edge = a_left_of_b ? projection_a : projection_b;
+        projection& projection_right_edge = a_left_of_b ? projection_b : projection_a;
+
+        float projection_plane_x_left = projection_left_edge.projection_plane_x; 
+        float projection_plane_x_right = projection_right_edge.projection_plane_x;
+        float distance_left = projection_left_edge.distance; 
+        float distance_right = projection_right_edge.distance;
+
+        float height_left = projected_height(distance_left, height );
+        float height_right = projected_height(distance_right, height );
+
+        float camera_height_offset_left =  _camera->pos.z * (height_left/2.f);
+        float camera_height_offset_right =  _camera->pos.z * (height_right/2.f);
+        float camera_vertical_rotation_offset = sin(_camera->vertical_rot_angle);
+
+        float projection_plane_y_left = (plane_height-height_left)/2.f + camera_height_offset_left + camera_vertical_rotation_offset;
+        float projection_plane_y_right = (plane_height-height_right)/2.f + camera_height_offset_right + camera_vertical_rotation_offset;
+
+        float w_scale = window->getSize().x / plane_width;
+        float y_scale = window->getSize().y / plane_height;
+
+        vertical_surface vs = {
+            .top_left = { w_scale * projection_plane_x_left, y_scale * projection_plane_y_left },
+            .top_right = { w_scale * projection_plane_x_right, y_scale * projection_plane_y_right },
+            .bot_left = { w_scale * projection_plane_x_left, y_scale * (projection_plane_y_left+height_left) },
+            .bot_right = { w_scale * projection_plane_x_right, y_scale * (projection_plane_y_right+height_right) },
+            .texture_id = texture_id
+        };
+
+        return vs;
 }
 
 void renderer::render_prism(sf::RenderWindow* window, prism& _prism) {
 
-    std::vector<vertical_surface> surfaces = compute_surfaces(window, _prism);
-    int nsurfaces = surfaces.size();
-    float leftmost_edge = std::numeric_limits<float>::max();
-    int first_surface_index = 0;
+    std::vector<projection> projections = compute_prism_projections(_prism);
+
+    if(projections.size() != _prism.edges.size()) {
+
+        // TODO
+        return;
+    }
 
 
-    for(int i = 0; i < surfaces.size(); i++) {
+    int nedges = projections.size();
+    int nsurfaces = nedges;
 
-        vertical_surface& vs = surfaces[i];
-        if(!vs.hidden && vs.top_left.x < leftmost_edge) {
-            leftmost_edge = vs.top_left.x;
-            first_surface_index = i;
+    float leftmost_edge_projection = std::numeric_limits<float>::max();
+    int leftmost_edge_index = 0;
+
+    for(int i = 0; i < nedges; i++) {
+
+        if(projections[i].projection_plane_x < leftmost_edge_projection) {
+            leftmost_edge_projection = projections[i].projection_plane_x;
+            leftmost_edge_index = i;
         }
     }
 
-    int prev_index = modulo(first_surface_index-1, nsurfaces);
     // Make sure we iterate first over the surfaces that are behind
-    bool backwards_iteration = surfaces[prev_index].distance_right > surfaces[first_surface_index].distance_left;
+    int prev_index = modulo(leftmost_edge_index-1, nedges);
+    bool backwards_iteration = projections[prev_index].distance > projections[leftmost_edge_index].distance;
     int increment = backwards_iteration ? -1 : 1;
 
-    if(backwards_iteration)
-        first_surface_index = modulo(first_surface_index-1, nsurfaces);
+    std::vector<vertical_surface> vertical_surfaces;
+    for(int i = leftmost_edge_index; vertical_surfaces.size() < nsurfaces; i = modulo(i+increment, nsurfaces)) {
 
-    // increment = iter_dir;
+        int next_index = modulo(i+increment, nsurfaces);
+        int texture_id_index = backwards_iteration ? next_index : i;
+        std::string texture_id = _prism.surface_texture_ids[texture_id_index];
 
+        vertical_surface vs = compute_surface(window, projections[i], projections[next_index], _prism.height, texture_id);
+        render_vertical_surface(window, vs);
+        vertical_surfaces.push_back(vs);
+    }
     
-    int rendered_surfaces = 0;
-    for(int i = first_surface_index; rendered_surfaces < nsurfaces; i = modulo(i+increment, nsurfaces)) {
+    if(_camera->pos.z != 0) {
 
-        if(!surfaces[i].hidden) {
-            render_vertical_surface(window, surfaces[i]);
-            rendered_surfaces++;
+        // Render horizontal surface
+
+        sf::ConvexShape horizontal_surface;
+        horizontal_surface.setPointCount(nedges);
+        for(int i = 0; i < vertical_surfaces.size(); i++) {
+
+            if(_camera->pos.z > 0) {
+                horizontal_surface.setPoint(i, vertical_surfaces[i].top_left);
+            }
+            else if (_camera->pos.z < 0){
+                horizontal_surface.setPoint(i, vertical_surfaces[i].bot_left);
+            }
         }
+
+        printf("nedges: %d\n", nedges);
+
+        horizontal_surface.setFillColor(sf::Color(128, 128, 128));
+        window->draw(horizontal_surface);
     }
 }
 
-std::vector<vertical_surface> renderer::compute_surfaces(sf::RenderWindow* window, prism& _prism) {
-
-    std::vector<vertical_surface> surfaces;
-
-    for(int i = 0; i < _prism.edges.size(); i++) {
+std::vector<projection> renderer::compute_prism_projections(prism& _prism) {
 
 
-        sf::Vector2f& edge_0 = _prism.edges[i];
-        sf::Vector2f& edge_1 = _prism.edges[ modulo(i+1, _prism.edges.size()) ];
+    std::vector<projection> projections;
+    for(auto& edge : _prism.edges) {
 
         try {
-
-            // TODO: currently recalculating projections
-            float projection_plane_x_0 = project_point(edge_0);
-            float projection_plane_x_1 = project_point(edge_1);
-
-            sf::Vector2f edge_left, edge_right;
-            float projection_plane_x_left, projection_plane_x_right;
-            
-            if(projection_plane_x_0 < projection_plane_x_1) {
-                edge_left = edge_0;
-                edge_right = edge_1;
-                projection_plane_x_left = projection_plane_x_0;
-                projection_plane_x_right = projection_plane_x_1;
-            }
-            else {
-                edge_left = edge_1;
-                edge_right = edge_0;
-                projection_plane_x_left = projection_plane_x_1;
-                projection_plane_x_right = projection_plane_x_0;
-            }
-
+            float projection_plane_x = project_point(edge);
             sf::Vector2f camera_pos_2f = sf::Vector2f(_camera->pos.x, _camera->pos.y);
-            sf::Vector2f rel_pos_left = edge_left - camera_pos_2f;
-            sf::Vector2f rel_pos_right = edge_right - camera_pos_2f;
+            sf::Vector2f rel_pos = edge - camera_pos_2f;
+            float distance = magnitude(rel_pos);
 
-            float distance_left = magnitude(rel_pos_left);
-            float distance_right = magnitude(rel_pos_right);
-
-            float height_left = projected_height(distance_left, _prism.height );
-            float height_right = projected_height(distance_right, _prism.height );
-            
-            float projection_plane_y_left = (plane_height-height_left)/2.f + _camera->pos.z * (height_left/2.f);
-            float projection_plane_y_right = (plane_height-height_right)/2.f + _camera->pos.z * (height_right/2.f);
-
-            float w_scale = window->getSize().x / plane_width;
-            float y_scale = window->getSize().y / plane_height;
-
-            vertical_surface vs = {
-                .hidden = false,
-                .distance_left = distance_left,
-                .distance_right = distance_right,
-                .top_left = { w_scale * projection_plane_x_left, y_scale * projection_plane_y_left },
-                .top_right = { w_scale * projection_plane_x_right, y_scale * projection_plane_y_right },
-                .bot_left = { w_scale * projection_plane_x_left, y_scale * (projection_plane_y_left+height_left) },
-                .bot_right = { w_scale * projection_plane_x_right, y_scale * (projection_plane_y_right+height_right) },
-                .texture_id = _prism.surface_texture_ids[i]
-            };
-
-
-            surfaces.push_back(vs);
+            projections.push_back({
+                .distance = distance,
+                .projection_plane_x = projection_plane_x
+            });
         }
         catch(const std::exception& e) {
 
-            // surface behind camera. no need to draw it
-            vertical_surface vs = { .hidden = true };
-            surfaces.push_back(vs);
+            // surface behind camera
             printf("exception\n");
-        }
+        }    
     }
 
-    return surfaces;
+    return projections;
 }
 
 void renderer::render(sf::RenderWindow* window, map& _map) {
@@ -166,7 +180,7 @@ void renderer::load_texture(std::string id, std::string texture_file) {
 
     sf::Texture* tex = new sf::Texture;
     if (!tex->loadFromFile(texture_file)) {
-        printf("Failed to load image %s\n", texture_file);
+        printf("Failed to load image %s\n", texture_file.c_str());
     }
     else {
 

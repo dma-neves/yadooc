@@ -1,5 +1,7 @@
 #include "yar.hpp"
 
+#include <cmath>
+
 yar::yar() : window(sf::VideoMode(800, 800), "yar"), _camera(),  _renderer(&_camera) {
 
     _renderer.load_texture("stone_wall", "../../../assets/sprites/Stone.png");
@@ -166,5 +168,19 @@ void yar::handle_keys(double dt) {
 
         float displacement = -dt*CAMERA_ROT_SPEED;
         _camera.pos.z += displacement;
+    }
+    if(keys_pressed.find(sf::Keyboard::Up)->second) {
+
+        float rot_angle = dt * CAMERA_ROT_SPEED;
+        _camera.vertical_rot_angle += rot_angle;
+        if(_camera.vertical_rot_angle > M_PI/4.f)
+            _camera.vertical_rot_angle = M_PI/4.f;
+    }
+    if(keys_pressed.find(sf::Keyboard::Down)->second) {
+
+        float rot_angle = -dt * CAMERA_ROT_SPEED;
+        _camera.vertical_rot_angle += rot_angle;
+        if(_camera.vertical_rot_angle < -M_PI/4.f)
+            _camera.vertical_rot_angle = -M_PI/4.f;
     }
 }

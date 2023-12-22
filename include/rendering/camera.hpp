@@ -13,6 +13,7 @@ public:
 
     sf::Vector3f pos;
     sf::Vector3f direction;
+    float vertical_rot_angle = 0; // this information should be in the direction vector
 
     camera(sf::Vector3f pos = DEFAULT_POSITION, sf::Vector3f direction = DEFAULT_DIRECTION);
 };

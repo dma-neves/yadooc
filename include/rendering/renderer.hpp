@@ -5,6 +5,7 @@
 #include "util/texture.hpp"
 #include "util/lalgebra.hpp"
 #include "rendering/vertical_surface.hpp"
+#include "rendering/projection.hpp"
 
 #include <SFML/Graphics.hpp>
 #include <string>
@@ -29,7 +30,8 @@ private:
     void render_vertical_surface(sf::RenderWindow* window, vertical_surface& surface);
     float project_point(sf::Vector2f& point);
     float projected_height(float distance, float real_height);
-    std::vector<vertical_surface> compute_surfaces(sf::RenderWindow* window, prism& _prism);
+    std::vector<projection> compute_prism_projections(prism& _prism);
+    vertical_surface compute_surface(sf::RenderWindow* window, projection& projection_a, projection& projection_b, float height, std::string texture_id);
 
     camera* _camera;
     float plane_distance;
