@@ -61,7 +61,6 @@ void renderer::render_prism(sf::RenderWindow* window, prism& _prism) {
     std::vector<projection> projections = compute_prism_projections(window, _prism);
 
     if(projections.size() != _prism.edges.size()) {
-
         // TODO
         return;
     }
@@ -74,7 +73,6 @@ void renderer::render_prism(sf::RenderWindow* window, prism& _prism) {
     int leftmost_edge_index = 0;
 
     for(int i = 0; i < nedges; i++) {
-
         if(projections[i].projection_plane_x < leftmost_edge_projection) {
             leftmost_edge_projection = projections[i].projection_plane_x;
             leftmost_edge_index = i;
