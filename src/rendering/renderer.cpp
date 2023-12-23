@@ -58,6 +58,7 @@ vertical_surface renderer::compute_surface(sf::RenderWindow* window, projection&
 
 void renderer::render_prism(sf::RenderWindow* window, prism& _prism) {
 
+
     std::vector<projection> projections = compute_prism_projections(window, _prism);
 
     if(projections.size() != _prism.edges.size()) {
@@ -71,6 +72,7 @@ void renderer::render_prism(sf::RenderWindow* window, prism& _prism) {
 
     float leftmost_edge_projection = std::numeric_limits<float>::max();
     int leftmost_edge_index = 0;
+
 
     for(int i = 0; i < nedges; i++) {
         if(projections[i].projection_plane_x < leftmost_edge_projection) {
@@ -96,9 +98,9 @@ void renderer::render_prism(sf::RenderWindow* window, prism& _prism) {
         rendered_surfaces++;
     }
     
-    if(fabs(_camera->pos.z) > _prism.height/2.f) {
+    // Render horizontal surface
+    if(fabs(_camera->pos.z) > _prism.height/2.f) { // TODO: camera at level of top edge
 
-        // Render horizontal surface
         sf::ConvexShape horizontal_surface;
         horizontal_surface.setPointCount(nedges);
         for(int i = 0; i < projections.size(); i++) {
@@ -125,16 +127,13 @@ std::vector<projection> renderer::compute_prism_projections(sf::RenderWindow* wi
     for(auto& edge : _prism.edges) {
 
         try {
-            float projection_plane_x = project_point(edge);
-            sf::Vector2f camera_pos_2f = sf::Vector2f(_camera->pos.x, _camera->pos.y);
-            sf::Vector2f rel_pos = edge - camera_pos_2f;
-            float distance = magnitude(rel_pos);
-
+            float distance = magnitude(edge - sf::Vector2f(_camera->pos.x, _camera->pos.y));
             float height = projected_height(distance, _prism.height);
-            float camera_height_offset =  _camera->pos.z * (height/2.f);
-            float camera_vertical_rotation_offset = sin(_camera->vertical_rot_angle);
 
-            float projection_plane_y_top = (plane_height-height)/2.f + camera_height_offset + camera_vertical_rotation_offset;
+            sf::Vector3f top_vertex_3f(edge.x, edge.y, _prism.pos_z + _prism.height/2.f);
+            sf::Vector2f projection_plane_pos = project_point(top_vertex_3f);
+
+            float projection_plane_y_top = projection_plane_pos.y;
             float projection_plane_y_bot = projection_plane_y_top + height;
 
             float x_scale = window->getSize().x / plane_width;
@@ -142,7 +141,7 @@ std::vector<projection> renderer::compute_prism_projections(sf::RenderWindow* wi
 
             projections.push_back({
                 .distance = distance,
-                .projection_plane_x = x_scale * projection_plane_x,
+                .projection_plane_x = x_scale * projection_plane_pos.x,
                 .projection_plane_y_top = y_scale * projection_plane_y_top,
                 .projection_plane_y_bot = y_scale * projection_plane_y_bot
             });
@@ -160,7 +159,6 @@ std::vector<projection> renderer::compute_prism_projections(sf::RenderWindow* wi
 void renderer::render(sf::RenderWindow* window, map& _map) {
 
     // TODO: sort prisms in render order
-
     for(prism& _prism : _map.prisms) {
 
         render_prism(window, _prism);
@@ -179,21 +177,38 @@ void renderer::load_texture(std::string id, std::string texture_file) {
     }
 }
 
-float renderer::project_point(sf::Vector2f& point) {
+sf::Vector2f renderer::project_point(sf::Vector3f& point) {
 
-    sf::Vector2f camera_dir = sf::Vector2f(_camera->direction.x, _camera->direction.y);
-    sf::Vector2f camera_pos = sf::Vector2f(_camera->pos.x, _camera->pos.y);
-    sf::Vector2f point_relative_position = point - camera_pos;
+    // X axis projection
+    
+    sf::Vector2f point_2f(point.x, point.y);
+    sf::Vector2f camera_dir_2f = sf::Vector2f(_camera->direction.x, _camera->direction.y);
+    sf::Vector2f camera_pos_2f = sf::Vector2f(_camera->pos.x, _camera->pos.y);
+    sf::Vector2f point_relative_position = point_2f - camera_pos_2f;
 
-    float alpha = angle_between_vectors(camera_dir, point_relative_position);
+    float alpha = angle_between_vectors(camera_dir_2f, point_relative_position);
 
     if(fabs(alpha) > M_PI/2.f)
         throw std::runtime_error("behind camera");
 
     float dx = plane_distance * tan(fabs(alpha));
-    float projection_plane_pos_x = alpha < 0.f ? plane_width/2.f - dx : plane_width/2.f + dx;
+    float projection_plane_pos_x = alpha < 0.f ? 
+        plane_width/2.f - dx : 
+        plane_width/2.f + dx;
 
-    return projection_plane_pos_x;
+    // Y axis projection
+
+    float distance = magnitude(point_relative_position);
+    float delta_z = point.z - _camera->pos.z;
+    float delta_z_abs = fabs(delta_z);
+    float projection_plane_delta_y = plane_distance / distance * delta_z_abs;
+    float projection_plane_pos_y = delta_z > 0 ?
+        plane_height/2.f - projection_plane_delta_y :
+        plane_height/2.f + projection_plane_delta_y;
+
+    float camera_vertical_rotation_offset = sin(_camera->vertical_rot_angle); // artificial vertical rotation
+
+    return sf::Vector2f(projection_plane_pos_x, projection_plane_pos_y + camera_vertical_rotation_offset);
 }
 
 float renderer::projected_height(float distance, float real_height) {

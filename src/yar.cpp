@@ -4,41 +4,6 @@
 
 yar::yar() : window(sf::VideoMode(800, 800), "yar"), _camera(),  _renderer(&_camera) {
 
-    _renderer.load_texture("stone_wall", "../../../assets/sprites/Stone.png");
-
-    std::vector<sf::Vector2f> edges = { 
-        sf::Vector2f(3,-1), 
-        sf::Vector2f(3,1), 
-        sf::Vector2f(5,1),
-        sf::Vector2f(5,-1),
-    };
-    std::vector<std::string> surface_texture_ids = {"stone_wall", "stone_wall", "stone_wall", "stone_wall"};
-
-    prism p = {
-        .edges = edges,
-        .surface_texture_ids = surface_texture_ids,
-        .height = 2
-    };
-
-    _map.prisms.push_back(p);
-
-    std::vector<sf::Vector2f> edges_2 = { 
-        sf::Vector2f(13,-1), 
-        sf::Vector2f(13,1), 
-        sf::Vector2f(15,1),
-        sf::Vector2f(16,0),
-        sf::Vector2f(15,-1),
-    };
-    std::vector<std::string> surface_texture_ids_2 = {"stone_wall", "stone_wall", "stone_wall", "stone_wall", "stone_wall"};
-
-    prism p_2 = {
-        .edges = edges_2,
-        .surface_texture_ids = surface_texture_ids_2,
-        .height = 3
-    };
-
-    _map.prisms.push_back(p_2);
-
     keys_pressed.insert({sf::Keyboard::Escape, false});
     keys_pressed.insert({sf::Keyboard::W, false});
     keys_pressed.insert({sf::Keyboard::A, false});
@@ -51,13 +16,53 @@ yar::yar() : window(sf::VideoMode(800, 800), "yar"), _camera(),  _renderer(&_cam
     keys_pressed.insert({sf::Keyboard::Up, false});
     keys_pressed.insert({sf::Keyboard::Down, false});
 
-    keys_pressed.insert({sf::Keyboard::I, false});
-
+    load_map();
 }
 
 yar::~yar() {
 
 
+}
+
+void yar::load_map() {
+
+     _renderer.load_texture("stone_wall", "../../../assets/sprites/Stone.png");
+    _renderer.load_texture("steel_wall", "../../../assets/sprites/Steel.png");
+
+    std::vector<sf::Vector2f> edges = { 
+        sf::Vector2f(3,-1), 
+        sf::Vector2f(3,1), 
+        sf::Vector2f(5,1),
+        sf::Vector2f(5,-1),
+    };
+    std::vector<std::string> surface_texture_ids = {"stone_wall", "stone_wall", "stone_wall", "stone_wall"};
+
+    prism p = {
+        .edges = edges,
+        .surface_texture_ids = surface_texture_ids,
+        .height = 2,
+        .pos_z = 1
+    };
+
+    _map.prisms.push_back(p);
+
+    std::vector<sf::Vector2f> edges_2 = { 
+        sf::Vector2f(13,-1), 
+        sf::Vector2f(13,1), 
+        sf::Vector2f(15,1),
+        sf::Vector2f(16,0),
+        sf::Vector2f(15,-1),
+    };
+    std::vector<std::string> surface_texture_ids_2 = {"steel_wall", "steel_wall", "steel_wall", "steel_wall", "steel_wall"};
+
+    prism p_2 = {
+        .edges = edges_2,
+        .surface_texture_ids = surface_texture_ids_2,
+        .height = 3,
+        .pos_z = 1.5
+    };
+
+    _map.prisms.push_back(p_2);   
 }
 
 
@@ -74,6 +79,7 @@ void yar::run() {
         time_t current_time = clock_t::now();
         double dt = ( static_cast<duration_t>(current_time - previous_time) ).count() * DT_MULTIPLIER;
         previous_time = current_time;
+        fps_timer += dt;
 
         handle_events(dt);
         update(dt);
@@ -87,11 +93,15 @@ void yar::update(double dt) {
 
 void yar::render() {
 
-    window.clear();
-    
-    _renderer.render(&window, _map);
+    if(fps_timer >= 1.0/FPS) {
 
-    window.display();
+        fps_timer = 0.0;
+        window.clear();
+        
+        _renderer.render(&window, _map);
+
+        window.display();
+    }
 }
 
 void yar::handle_events(double dt) {

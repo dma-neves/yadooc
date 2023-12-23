@@ -8,6 +8,7 @@
 #include "rendering/renderer.hpp"
 
 #define DT_MULTIPLIER 1.0
+#define FPS 60.0
 
 #define CAMERA_SPEED 3.f
 #define CAMERA_ROT_SPEED 2.f
@@ -27,6 +28,8 @@ public:
 
 private:
 
+    void load_map();
+
     sf::RenderWindow window;
     sf::Event event;
 
@@ -35,4 +38,5 @@ private:
     renderer _renderer;
     bool running = true;
     std::unordered_map<sf::Keyboard::Key, bool> keys_pressed;
+    double fps_timer = 0.0;
 };

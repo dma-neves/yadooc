@@ -28,7 +28,7 @@ private:
 
     void render_prism(sf::RenderWindow* window, prism& _prism);
     void render_vertical_surface(sf::RenderWindow* window, vertical_surface& surface);
-    float project_point(sf::Vector2f& point);
+    sf::Vector2f project_point(sf::Vector3f& point);
     float projected_height(float distance, float real_height);
     std::vector<projection> compute_prism_projections(sf::RenderWindow* window, prism& _prism);
     vertical_surface compute_surface(sf::RenderWindow* window, projection& projection_a, projection& projection_b, float height, std::string texture_id);
