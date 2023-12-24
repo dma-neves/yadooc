@@ -1,6 +1,9 @@
 #include "rendering/renderer.hpp"
 #include <cmath>
 #include <limits>
+#include <iostream>
+#include <fstream>
+#include <sstream>
 
 renderer::renderer(camera* _camera, double fov, float plane_distance) : _camera(_camera), plane_distance(plane_distance) {
 
@@ -56,10 +59,10 @@ vertical_surface renderer::compute_surface(sf::RenderWindow* window, projection&
         return vs;
 }
 
-void renderer::render_prism(sf::RenderWindow* window, prism& _prism) {
+void renderer::render_prism(sf::RenderWindow* window, prism& _prism, std::vector<projection>& projections) {
 
 
-    std::vector<projection> projections = compute_prism_projections(window, _prism);
+    //std::vector<projection> projections = compute_prism_projections(window, _prism);
 
     if(projections.size() != _prism.edges.size()) {
         // TODO
@@ -99,17 +102,19 @@ void renderer::render_prism(sf::RenderWindow* window, prism& _prism) {
     }
     
     // Render horizontal surface
-    if(fabs(_camera->pos.z) > _prism.height/2.f) { // TODO: camera at level of top edge
+    float top = _prism.pos_z + _prism.height/2.f;
+    float bot = _prism.pos_z - _prism.height/2.f;
+    if(_camera->pos.z > top || _camera->pos.z < bot) { // TODO: camera at level of top edge
 
         sf::ConvexShape horizontal_surface;
         horizontal_surface.setPointCount(nedges);
         for(int i = 0; i < projections.size(); i++) {
 
-            if(_camera->pos.z > 0) {
+            if(_camera->pos.z > top) {
                 sf::Vector2f top_corner(projections[i].projection_plane_x, projections[i].projection_plane_y_top);
                 horizontal_surface.setPoint(i,top_corner);
             }
-            else if (_camera->pos.z < 0){
+            else if (_camera->pos.z < bot){
                 sf::Vector2f bot_corner(projections[i].projection_plane_x, projections[i].projection_plane_y_bot);
                 horizontal_surface.setPoint(i, bot_corner);
             }
@@ -127,7 +132,12 @@ std::vector<projection> renderer::compute_prism_projections(sf::RenderWindow* wi
     for(auto& edge : _prism.edges) {
 
         try {
-            float distance = magnitude(edge - sf::Vector2f(_camera->pos.x, _camera->pos.y));
+            sf::Vector2f rel_pos = edge - sf::Vector2f(_camera->pos.x, _camera->pos.y);
+            sf::Vector2f camera_dir_2f(_camera->direction.x, _camera->direction.y);
+            float distance = magnitude(rel_pos);
+            float theta = fabs(angle_between_vectors(rel_pos, camera_dir_2f));
+            float distance_undistorted = distance * cos(theta);
+            // float height = projected_height(distance_undistorted, _prism.height);
             float height = projected_height(distance, _prism.height);
 
             sf::Vector3f top_vertex_3f(edge.x, edge.y, _prism.pos_z + _prism.height/2.f);
@@ -149,7 +159,7 @@ std::vector<projection> renderer::compute_prism_projections(sf::RenderWindow* wi
         catch(const std::exception& e) {
 
             // surface behind camera
-            // printf("exception\n");
+            //printf("exception\n");
         }    
     }
 
@@ -159,9 +169,27 @@ std::vector<projection> renderer::compute_prism_projections(sf::RenderWindow* wi
 void renderer::render(sf::RenderWindow* window, map& _map) {
 
     // TODO: sort prisms in render order
-    for(prism& _prism : _map.prisms) {
 
-        render_prism(window, _prism);
+    std::unordered_map<std::string, std::vector<projection>> prism_projections;
+    std::map<float, std::string> prism_depths;
+
+    for (auto it = _map.prisms.begin(); it != _map.prisms.end(); it++) {
+
+        prism& _prism = it->second;
+        std::vector<projection> projections = compute_prism_projections(window, _prism);
+        if(projections.size() > 0) {
+            float depth = compute_prism_depth(projections);
+
+            prism_projections.insert({_prism.id, projections});
+            prism_depths.insert({depth, _prism.id});
+        }
+    }
+
+    for (auto it = prism_depths.rbegin(); it != prism_depths.rend(); it++) {
+        std::string prism_id = it->second;
+        prism& _prism = _map.prisms.find(prism_id)->second;
+        std::vector<projection>& projections = prism_projections.find(prism_id)->second;
+        render_prism(window, _prism, projections);
     }
 }
 
@@ -214,4 +242,35 @@ sf::Vector2f renderer::project_point(sf::Vector3f& point) {
 float renderer::projected_height(float distance, float real_height) {
 
     return 1.f / distance * real_height;
+}
+
+float renderer::compute_prism_depth(const std::vector<projection>& projections) {
+
+    float sum_depth = 0.0f;
+
+    for(const projection& _projection : projections) {
+        sum_depth += _projection.distance;
+    }
+
+    float average_depth = sum_depth / (float)projections.size();
+    return average_depth;
+}
+
+
+void renderer::load_textures_csv(std::string file_path) {
+
+    std::ifstream file(file_path);
+    if (!file.is_open()) {
+        std::cerr << "Error opening file: " << file_path << std::endl;
+        return;
+    }
+    
+    int num_textures;
+    file >> num_textures;
+    for(int i = 0; i < num_textures; i++) {
+
+        std::string texture_id, texture_file;
+        file >> texture_id >> texture_file;
+        load_texture(texture_id, texture_file);
+    }
 }

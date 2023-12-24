@@ -16,7 +16,17 @@ yar::yar() : window(sf::VideoMode(800, 800), "yar"), _camera(),  _renderer(&_cam
     keys_pressed.insert({sf::Keyboard::Up, false});
     keys_pressed.insert({sf::Keyboard::Down, false});
 
-    load_map();
+
+     _renderer.load_texture("stone_wall", "../../../assets/sprites/Stone.png");
+    _renderer.load_texture("steel_wall", "../../../assets/sprites/Steel.png");
+
+    std::unordered_map<std::string, std::string> textures;
+
+
+
+    //load_map();
+    _renderer.load_textures_csv("../../../assets/maps/doom_stairs_textures.csv");
+    _map.load_csv("../../../assets/maps/doom_stairs.csv");
 }
 
 yar::~yar() {
@@ -26,8 +36,8 @@ yar::~yar() {
 
 void yar::load_map() {
 
-     _renderer.load_texture("stone_wall", "../../../assets/sprites/Stone.png");
-    _renderer.load_texture("steel_wall", "../../../assets/sprites/Steel.png");
+    //  _renderer.load_texture("stone_wall", "../../../assets/sprites/Stone.png");
+    // _renderer.load_texture("steel_wall", "../../../assets/sprites/Steel.png");
 
     std::vector<sf::Vector2f> edges = { 
         sf::Vector2f(3,-1), 
@@ -37,14 +47,15 @@ void yar::load_map() {
     };
     std::vector<std::string> surface_texture_ids = {"stone_wall", "stone_wall", "stone_wall", "stone_wall"};
 
-    prism p = {
-        .edges = edges,
-        .surface_texture_ids = surface_texture_ids,
+    prism p0 = {
+        .id = "p0",
         .height = 2,
-        .pos_z = 1
+        .pos_z = 1,
+        .edges = edges,
+        .surface_texture_ids = surface_texture_ids
     };
 
-    _map.prisms.push_back(p);
+    _map.prisms.insert({p0.id, p0});
 
     std::vector<sf::Vector2f> edges_2 = { 
         sf::Vector2f(13,-1), 
@@ -55,14 +66,15 @@ void yar::load_map() {
     };
     std::vector<std::string> surface_texture_ids_2 = {"steel_wall", "steel_wall", "steel_wall", "steel_wall", "steel_wall"};
 
-    prism p_2 = {
-        .edges = edges_2,
-        .surface_texture_ids = surface_texture_ids_2,
+    prism p1 = {
+        .id = "p1",
         .height = 3,
-        .pos_z = 1.5
+        .pos_z = 1.5,
+        .edges = edges_2,
+        .surface_texture_ids = surface_texture_ids_2
     };
 
-    _map.prisms.push_back(p_2);   
+    _map.prisms.insert({p1.id, p1});   
 }
 
 
