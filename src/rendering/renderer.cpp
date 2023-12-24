@@ -61,14 +61,13 @@ vertical_surface renderer::compute_surface(sf::RenderWindow* window, projection&
 
 void renderer::render_prism(sf::RenderWindow* window, prism& _prism, std::vector<projection>& projections) {
 
-
-    //std::vector<projection> projections = compute_prism_projections(window, _prism);
-
     if(projections.size() != _prism.edges.size()) {
         // TODO
         return;
     }
 
+
+    // Render walls
 
     int nedges = projections.size();
     int nsurfaces = nedges;
@@ -135,25 +134,21 @@ std::vector<projection> renderer::compute_prism_projections(sf::RenderWindow* wi
             sf::Vector2f rel_pos = edge - sf::Vector2f(_camera->pos.x, _camera->pos.y);
             sf::Vector2f camera_dir_2f(_camera->direction.x, _camera->direction.y);
             float distance = magnitude(rel_pos);
-            float theta = fabs(angle_between_vectors(rel_pos, camera_dir_2f));
-            float distance_undistorted = distance * cos(theta);
-            // float height = projected_height(distance_undistorted, _prism.height);
-            float height = projected_height(distance, _prism.height);
 
             sf::Vector3f top_vertex_3f(edge.x, edge.y, _prism.pos_z + _prism.height/2.f);
-            sf::Vector2f projection_plane_pos = project_point(top_vertex_3f);
+            sf::Vector2f top_projection_plane_pos = project_point(top_vertex_3f);
 
-            float projection_plane_y_top = projection_plane_pos.y;
-            float projection_plane_y_bot = projection_plane_y_top + height;
+            sf::Vector3f bot_vertex_3f(edge.x, edge.y, _prism.pos_z - _prism.height/2.f);
+            sf::Vector2f bot_projection_plane_pos = project_point(bot_vertex_3f); // TODO: avoid projecting x axis twice
 
             float x_scale = window->getSize().x / plane_width;
             float y_scale = window->getSize().y / plane_height;
 
             projections.push_back({
                 .distance = distance,
-                .projection_plane_x = x_scale * projection_plane_pos.x,
-                .projection_plane_y_top = y_scale * projection_plane_y_top,
-                .projection_plane_y_bot = y_scale * projection_plane_y_bot
+                .projection_plane_x = x_scale * top_projection_plane_pos.x,
+                .projection_plane_y_top = y_scale * top_projection_plane_pos.y,
+                .projection_plane_y_bot = y_scale * bot_projection_plane_pos.y
             });
         }
         catch(const std::exception& e) {
@@ -227,9 +222,12 @@ sf::Vector2f renderer::project_point(sf::Vector3f& point) {
     // Y axis projection
 
     float distance = magnitude(point_relative_position);
+    float theta = fabs(angle_between_vectors(point_relative_position, camera_dir_2f));
+    float distance_undistorted = distance * cos(theta);
+
     float delta_z = point.z - _camera->pos.z;
     float delta_z_abs = fabs(delta_z);
-    float projection_plane_delta_y = plane_distance / distance * delta_z_abs;
+    float projection_plane_delta_y = plane_distance / distance_undistorted * delta_z_abs;
     float projection_plane_pos_y = delta_z > 0 ?
         plane_height/2.f - projection_plane_delta_y :
         plane_height/2.f + projection_plane_delta_y;
@@ -239,13 +237,14 @@ sf::Vector2f renderer::project_point(sf::Vector3f& point) {
     return sf::Vector2f(projection_plane_pos_x, projection_plane_pos_y + camera_vertical_rotation_offset);
 }
 
-float renderer::projected_height(float distance, float real_height) {
+// float renderer::projected_height(float distance, float real_height) {
 
-    return 1.f / distance * real_height;
-}
+//     return 1.f / distance * real_height;
+// }
 
 float renderer::compute_prism_depth(const std::vector<projection>& projections) {
 
+    // TODO: improve this (ex: vertical distance)
     float sum_depth = 0.0f;
 
     for(const projection& _projection : projections) {

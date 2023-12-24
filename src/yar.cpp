@@ -24,7 +24,6 @@ yar::yar() : window(sf::VideoMode(800, 800), "yar"), _camera(),  _renderer(&_cam
 
 
 
-    //load_map();
     _renderer.load_textures_csv("../../../assets/maps/doom_stairs_textures.csv");
     _map.load_csv("../../../assets/maps/doom_stairs.csv");
 }
@@ -33,50 +32,6 @@ yar::~yar() {
 
 
 }
-
-void yar::load_map() {
-
-    //  _renderer.load_texture("stone_wall", "../../../assets/sprites/Stone.png");
-    // _renderer.load_texture("steel_wall", "../../../assets/sprites/Steel.png");
-
-    std::vector<sf::Vector2f> edges = { 
-        sf::Vector2f(3,-1), 
-        sf::Vector2f(3,1), 
-        sf::Vector2f(5,1),
-        sf::Vector2f(5,-1),
-    };
-    std::vector<std::string> surface_texture_ids = {"stone_wall", "stone_wall", "stone_wall", "stone_wall"};
-
-    prism p0 = {
-        .id = "p0",
-        .height = 2,
-        .pos_z = 1,
-        .edges = edges,
-        .surface_texture_ids = surface_texture_ids
-    };
-
-    _map.prisms.insert({p0.id, p0});
-
-    std::vector<sf::Vector2f> edges_2 = { 
-        sf::Vector2f(13,-1), 
-        sf::Vector2f(13,1), 
-        sf::Vector2f(15,1),
-        sf::Vector2f(16,0),
-        sf::Vector2f(15,-1),
-    };
-    std::vector<std::string> surface_texture_ids_2 = {"steel_wall", "steel_wall", "steel_wall", "steel_wall", "steel_wall"};
-
-    prism p1 = {
-        .id = "p1",
-        .height = 3,
-        .pos_z = 1.5,
-        .edges = edges_2,
-        .surface_texture_ids = surface_texture_ids_2
-    };
-
-    _map.prisms.insert({p1.id, p1});   
-}
-
 
 void yar::run() {
 
@@ -125,24 +80,26 @@ void yar::handle_events(double dt) {
 
         switch (event.type)
         {
-        case sf::Event::Closed:
-            window.close();
-            running = false;
-            break;
+            case sf::Event::Closed:
+                window.close();
+                running = false;
+                break;
 
-        case sf::Event::KeyPressed:
-            keys_pressed.find(event.key.code)->second =  true;
-
-            if(event.key.code == sf::Keyboard::I) {
-                _renderer.iter_dir *= -1;
-                printf("iter dir: %d\n", _renderer.iter_dir);
+            case sf::Event::KeyPressed: {
+                auto it = keys_pressed.find(event.key.code);
+                if(it != keys_pressed.end()) {
+                    it->second =  true;
+                }
+                break;
             }
 
-            break;
-
-        case sf::Event::KeyReleased:
-            keys_pressed.find(event.key.code)->second =  false;
-            break;
+            case sf::Event::KeyReleased:  {
+                auto it = keys_pressed.find(event.key.code);
+                if(it != keys_pressed.end()) {
+                    it->second =  false;
+                }
+                break;
+            }
         }
     }
 
