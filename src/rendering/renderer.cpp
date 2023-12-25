@@ -73,7 +73,9 @@ void renderer::render_prism(sf::RenderWindow* window, prism& _prism, std::vector
     int nsurfaces = nedges;
 
     float leftmost_edge_projection = std::numeric_limits<float>::max();
+    float rightmost_edge_projection = std::numeric_limits<float>::min();
     int leftmost_edge_index = 0;
+    int rightmost_edge_index = 0;
 
 
     for(int i = 0; i < nedges; i++) {
@@ -81,23 +83,26 @@ void renderer::render_prism(sf::RenderWindow* window, prism& _prism, std::vector
             leftmost_edge_projection = projections[i].projection_plane_x;
             leftmost_edge_index = i;
         }
+        if(projections[i].projection_plane_x > rightmost_edge_projection) {
+            rightmost_edge_projection = projections[i].projection_plane_x;
+            rightmost_edge_index = i;
+        }
     }
 
-    // Make sure we iterate first over the surfaces that are behind
+    // Make sure we only iterate and render the surfaces that are "on front"
     int prev_index = modulo(leftmost_edge_index-1, nedges);
-    bool backwards_iteration = projections[prev_index].distance > projections[leftmost_edge_index].distance;
+    int next_index = modulo(leftmost_edge_index+1, nedges);
+    bool backwards_iteration = projections[prev_index].distance < projections[next_index].distance;
     int increment = backwards_iteration ? -1 : 1;
 
-    int rendered_surfaces = 0;
-    for(int i = leftmost_edge_index; rendered_surfaces < nsurfaces; i = modulo(i+increment, nsurfaces)) {
+    for(int i = leftmost_edge_index; i != rightmost_edge_index; i = modulo(i+increment, nsurfaces)) {
 
-        int next_index = modulo(i+increment, nsurfaces);
+        next_index = modulo(i+increment, nsurfaces);
         int texture_id_index = backwards_iteration ? next_index : i;
         std::string texture_id = _prism.surface_texture_ids[texture_id_index];
 
         vertical_surface vs = compute_surface(window, projections[i], projections[next_index], _prism.height, texture_id);
         render_vertical_surface(window, vs);
-        rendered_surfaces++;
     }
     
     // Render horizontal surface
