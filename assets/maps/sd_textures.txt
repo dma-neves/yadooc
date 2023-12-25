@@ -1,0 +1,2 @@
+1
+starg1 ../../../assets/sprites/doom/STARGR1.png

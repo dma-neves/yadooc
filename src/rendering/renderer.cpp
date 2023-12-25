@@ -256,7 +256,7 @@ float renderer::compute_prism_depth(const std::vector<projection>& projections) 
 }
 
 
-void renderer::load_textures_csv(std::string file_path) {
+void renderer::load_textures_file(std::string file_path) {
 
     std::ifstream file(file_path);
     if (!file.is_open()) {

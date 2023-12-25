@@ -20,7 +20,7 @@ public:
 
     void render(sf::RenderWindow* window, map& _map);
     void load_texture(std::string id, std::string texture_file);
-    void load_textures_csv(std::string file_path);
+    void load_textures_file(std::string file_path);
 
 private:
 

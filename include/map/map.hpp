@@ -10,5 +10,5 @@ class map {
 public:
     std::unordered_map<std::string, prism> prisms;
 
-    void load_csv(std::string file_path);
+    void load_file(std::string file_path);
 };

@@ -16,16 +16,11 @@ yar::yar() : window(sf::VideoMode(800, 800), "yar"), _camera(),  _renderer(&_cam
     keys_pressed.insert({sf::Keyboard::Up, false});
     keys_pressed.insert({sf::Keyboard::Down, false});
 
+    // _renderer.load_textures_file("../../../assets/maps/doom_stairs_textures.txt");
+    // _map.load_file("../../../assets/maps/doom_stairs.txt");
 
-     _renderer.load_texture("stone_wall", "../../../assets/sprites/Stone.png");
-    _renderer.load_texture("steel_wall", "../../../assets/sprites/Steel.png");
-
-    std::unordered_map<std::string, std::string> textures;
-
-
-
-    _renderer.load_textures_csv("../../../assets/maps/doom_stairs_textures.csv");
-    _map.load_csv("../../../assets/maps/doom_stairs.csv");
+    _renderer.load_textures_file("../../../assets/maps/sd_textures.txt");
+    _map.load_file("../../../assets/maps/sd.txt");
 }
 
 yar::~yar() {

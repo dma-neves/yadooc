@@ -4,7 +4,7 @@
 #include <fstream>
 #include <sstream>
 
-void map::load_csv(std::string file_path) {
+void map::load_file(std::string file_path) {
     
     std::ifstream file(file_path);
     if (!file.is_open()) {
