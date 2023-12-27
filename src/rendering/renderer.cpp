@@ -67,10 +67,31 @@ void renderer::render_solid(sf::RenderWindow* window, solid& _solid, std::vector
         return;
     }
 
-    // Render walls
-
     int nedges = projections.size();
     int nsurfaces = nedges;
+
+    // Render horizontal surfaces
+
+    sf::ConvexShape bot_surface;
+    sf::ConvexShape top_surface;
+    bot_surface.setPointCount(nedges);
+    top_surface.setPointCount(nedges);
+    for(int i = 0; i < projections.size(); i++) {
+
+        sf::Vector2f bot_corner(projections[i].projection_plane_x, projections[i].projection_plane_y_bot);
+        bot_surface.setPoint(i, bot_corner);
+
+        sf::Vector2f top_corner(projections[i].projection_plane_x, projections[i].projection_plane_y_top);
+        top_surface.setPoint(i,top_corner);
+    }
+    bot_surface.setFillColor(sf::Color(64, 64, 64));
+    top_surface.setFillColor(sf::Color(64, 64, 64));
+    // TODO: determine correct draw order
+    window->draw(bot_surface);
+    window->draw(top_surface);
+
+
+    // Render walls
 
     float leftmost_edge_projection = std::numeric_limits<float>::max();
     float rightmost_edge_projection = std::numeric_limits<float>::min();
@@ -95,8 +116,6 @@ void renderer::render_solid(sf::RenderWindow* window, solid& _solid, std::vector
     bool backwards_iteration = projections[prev_index].distance < projections[next_index].distance;
     int increment = backwards_iteration ? -1 : 1;
 
-    float min_top = std::numeric_limits<float>::min();
-    float max_bot = std::numeric_limits<float>::max();
     for(int i = leftmost_edge_index; i != rightmost_edge_index; i = modulo(i+increment, nsurfaces)) {
 
         next_index = modulo(i+increment, nsurfaces);
@@ -105,36 +124,6 @@ void renderer::render_solid(sf::RenderWindow* window, solid& _solid, std::vector
 
         vertical_surface vs = compute_surface(window, projections[i], projections[next_index], texture_id);
         render_vertical_surface(window, vs);
-
-        if(_solid.edges[i].top_z < min_top) {
-            min_top = _solid.edges[i].top_z;
-        }
-        if(_solid.edges[i].bot_z > max_bot) {
-            max_bot = _solid.edges[i].bot_z;
-        }
-    }
-    
-    // Render horizontal surface
-
-    if(_camera->pos.z > min_top || _camera->pos.z < max_bot) { // TODO: camera at level of top edge
-
-        sf::ConvexShape horizontal_surface;
-        horizontal_surface.setPointCount(nedges);
-        for(int i = 0; i < projections.size(); i++) {
-
-            if(_camera->pos.z > min_top) {
-                sf::Vector2f top_corner(projections[i].projection_plane_x, projections[i].projection_plane_y_top);
-                horizontal_surface.setPoint(i,top_corner);
-            }
-            else if (_camera->pos.z < max_bot){
-                sf::Vector2f bot_corner(projections[i].projection_plane_x, projections[i].projection_plane_y_bot);
-                horizontal_surface.setPoint(i, bot_corner);
-            }
-        }
-
-        horizontal_surface.setFillColor(sf::Color(64, 64, 64));
-        // horizontal_surface.setTexture(textures.find("stone_wall")->second.sf_texture);
-        window->draw(horizontal_surface);
     }
 }
 
