@@ -5,8 +5,8 @@
 ## Description
 
 - Another 2.5D DOOM inspired software renderer written in C++.
-- This renderer sits between a Wolfenstein and a Doom renderer, as it doesn't explicitly cast rays for each pixel column like in Wolfenstein, but rather projects each surface to the projection plane like Doom. However, contrary to Doom, no BSP and sector based rendering technique are used.
-- yadooc receives a map data structure as input to render. This data structure consists of a set of prisms that can have any number of edges but must be convex.
+- This renderer sits between a DOOM and a Duke Nukem 3D renderer, as it iteratively projects vertical walls to a projection plane in a similar fashion to Doom (not allowing true up and down camera rotation), while also allowing sloped surfaces to be rendered similarly to Duke Nukem 3D. However, contrary to Doom and Duke Nukem, no BSP or sector based rendering technique are used.
+- yadooc receives a map data structure as input to render. This data structure consists of a set of solids that can have any number of edges but must be convex and constructed via the combination of a set of vertical "walls".
 - Currently only wall texture mapping is supported (no ground texture mapping).
 
 ## Requirements

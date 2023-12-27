@@ -12,29 +12,29 @@ void map::load_file(std::string file_path) {
         return;
     }
 
-    int num_prisms;
-    file >> num_prisms;
+    int num_solids;
+    file >> num_solids;
 
-    for (int i = 0; i < num_prisms; ++i) {
-        prism current_prism;
-        file >> current_prism.id >> current_prism.height >> current_prism.pos_z;
+    for (int i = 0; i < num_solids; ++i) {
+        solid current_solid;
+        file >> current_solid.id;
 
         int num_edges;
         file >> num_edges;
 
         for (int j = 0; j < num_edges; ++j) {
-            sf::Vector2f edge;
-            file >> edge.x >> edge.y;
-            current_prism.edges.push_back(edge);
+            edge_t edge;
+            file >> edge.pos.x >> edge.pos.y >> edge.bot_z >> edge.top_z;
+            current_solid.edges.push_back(edge);
         }
 
         for (int j = 0; j < num_edges; ++j) {
             std::string texture_id;
             file >> texture_id;
-            current_prism.surface_texture_ids.push_back(texture_id);
+            current_solid.surface_texture_ids.push_back(texture_id);
         }
 
-        prisms.insert({current_prism.id, current_prism});
+        solids.insert({current_solid.id, current_solid});
     }
 
     file.close();

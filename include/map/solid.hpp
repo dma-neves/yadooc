@@ -4,10 +4,15 @@
 #include <string>
 #include <SFML/Graphics.hpp>
 
-struct prism {
+struct edge_t {
+
+    sf::Vector2f pos;
+    float bot_z;
+    float top_z;
+};
+
+struct solid {
     std::string id;
-    float height;
-    float pos_z;
-    std::vector<sf::Vector2f> edges;
+    std::vector<edge_t> edges;
     std::vector<std::string> surface_texture_ids;
 };

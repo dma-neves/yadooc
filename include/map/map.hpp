@@ -3,12 +3,12 @@
 #include <unordered_map>
 #include <string>
 
-#include "prism.hpp"
+#include "solid.hpp"
 
 class map {
 
 public:
-    std::unordered_map<std::string, prism> prisms;
+    std::unordered_map<std::string, solid> solids;
 
     void load_file(std::string file_path);
 };

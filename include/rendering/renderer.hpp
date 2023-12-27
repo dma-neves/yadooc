@@ -24,13 +24,12 @@ public:
 
 private:
 
-    void render_prism(sf::RenderWindow* window, prism& _prism, std::vector<projection>& projections);
+    void render_solid(sf::RenderWindow* window, solid& _solid, std::vector<projection>& projections);
     void render_vertical_surface(sf::RenderWindow* window, vertical_surface& surface);
     sf::Vector2f project_point(sf::Vector3f& point);
-    // float projected_height(float distance, float real_height);
-    std::vector<projection> compute_prism_projections(sf::RenderWindow* window, prism& _prism);
-    vertical_surface compute_surface(sf::RenderWindow* window, projection& projection_a, projection& projection_b, float height, std::string texture_id);
-    float compute_prism_depth(const std::vector<projection>& projections);
+    std::vector<projection> compute_solid_projections(sf::RenderWindow* window, solid& _solid);
+    vertical_surface compute_surface(sf::RenderWindow* window, projection& projection_a, projection& projection_b, std::string texture_id);
+    float compute_solid_depth(const std::vector<projection>& projections);
 
     camera* _camera;
     float plane_distance;
