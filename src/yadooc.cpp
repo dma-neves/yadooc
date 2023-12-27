@@ -1,8 +1,8 @@
-#include "yar.hpp"
+#include "yadooc.hpp"
 
 #include <cmath>
 
-yar::yar() : window(sf::VideoMode(800, 800), "yar"), _camera(),  _renderer(&_camera) {
+yadooc::yadooc() : window(sf::VideoMode(800, 800), "yadooc"), _camera(),  _renderer(&_camera) {
 
     keys_pressed.insert({sf::Keyboard::Escape, false});
     keys_pressed.insert({sf::Keyboard::W, false});
@@ -23,12 +23,12 @@ yar::yar() : window(sf::VideoMode(800, 800), "yar"), _camera(),  _renderer(&_cam
     _map.load_file("../../../assets/maps/sd.txt");
 }
 
-yar::~yar() {
+yadooc::~yadooc() {
 
 
 }
 
-void yar::run() {
+void yadooc::run() {
 
     using clock_t = std::chrono::high_resolution_clock;
     using time_t = std::chrono::time_point<clock_t>;
@@ -49,11 +49,11 @@ void yar::run() {
     }
 }
 
-void yar::update(double dt) {
+void yadooc::update(double dt) {
 
 }
 
-void yar::render() {
+void yadooc::render() {
 
     if(fps_timer >= 1.0/FPS) {
 
@@ -66,7 +66,7 @@ void yar::render() {
     }
 }
 
-void yar::handle_events(double dt) {
+void yadooc::handle_events(double dt) {
 
     while (window.pollEvent(event)) {
 
@@ -101,7 +101,7 @@ void yar::handle_events(double dt) {
     handle_keys(dt);
 }
 
-void yar::handle_keys(double dt) {
+void yadooc::handle_keys(double dt) {
 
     if(keys_pressed.find(sf::Keyboard::Escape)->second) {
 

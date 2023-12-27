@@ -13,12 +13,12 @@
 #define CAMERA_SPEED 3.f
 #define CAMERA_ROT_SPEED 2.f
 
-class yar {
+class yadooc {
 
 public:
 
-    yar();
-    ~yar();
+    yadooc();
+    ~yadooc();
 
     void run();
     void update(double dt);

@@ -1,7 +1,7 @@
-#include "yar.hpp"
+#include "yadooc.hpp"
 
 int main(int argc, char* argv[]) {
 
-    yar _yar;
-    _yar.run();
+    yadooc _yadooc;
+    _yadooc.run();
 }
