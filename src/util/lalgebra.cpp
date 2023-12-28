@@ -60,6 +60,11 @@ float magnitude(sf::Vector2f vec) {
     return sqrt(vec.x * vec.x + vec.y * vec.y);
 }
 
+float magnitude(sf::Vector3f vec) {
+
+    return sqrt(vec.x * vec.x + vec.y * vec.y + vec.z * vec.z);
+}
+
 sf::Vector2f rotate_vector(sf::Vector2f& vec, float angle) {
 
     float x = vec.x * cos(angle) - vec.y * sin(angle);

@@ -113,7 +113,7 @@ void renderer::render_solid(sf::RenderWindow* window, solid& _solid, std::vector
     // Make sure we only iterate and render the surfaces that are "on front"
     int prev_index = modulo(leftmost_edge_index-1, nedges);
     int next_index = modulo(leftmost_edge_index+1, nedges);
-    bool backwards_iteration = projections[prev_index].distance < projections[next_index].distance;
+    bool backwards_iteration = projections[prev_index].distance_2f < projections[next_index].distance_2f;
     int increment = backwards_iteration ? -1 : 1;
 
     for(int i = leftmost_edge_index; i != rightmost_edge_index; i = modulo(i+increment, nsurfaces)) {
@@ -133,8 +133,10 @@ std::vector<projection> renderer::compute_solid_projections(sf::RenderWindow* wi
     for(auto& edge : _solid.edges) {
 
         try {
-            sf::Vector2f rel_pos = edge.pos - sf::Vector2f(_camera->pos.x, _camera->pos.y);
-            float distance = magnitude(rel_pos);
+            sf::Vector2f rel_pos_2f = edge.pos - sf::Vector2f(_camera->pos.x, _camera->pos.y);
+            float distance_2f = magnitude(rel_pos_2f);
+            sf::Vector3f rel_pos_3f = sf::Vector3f(edge.pos.x, edge.pos.y, (edge.top_z-edge.bot_z)/2.f) - _camera->pos;
+            float distance_3f = magnitude(rel_pos_3f);
 
             sf::Vector3f top_vertex_3f(edge.pos.x, edge.pos.y, edge.top_z);
             sf::Vector2f top_projection_plane_pos = project_point(top_vertex_3f);
@@ -146,7 +148,8 @@ std::vector<projection> renderer::compute_solid_projections(sf::RenderWindow* wi
             float y_scale = window->getSize().y / plane_height;
 
             projections.push_back({
-                .distance = distance,
+                .distance_2f = distance_2f,
+                .distance_3f = distance_3f,
                 .projection_plane_x = x_scale * top_projection_plane_pos.x,
                 .projection_plane_y_top = y_scale * top_projection_plane_pos.y,
                 .projection_plane_y_bot = y_scale * bot_projection_plane_pos.y
@@ -257,6 +260,10 @@ void renderer::render(sf::RenderWindow* window, map& _map) {
             float depth = compute_solid_depth(projections);
 
             solid_projections.insert({_solid.id, projections});
+            if(solid_depths.find(depth) != solid_depths.end()) {
+                // edge case
+                depth += 0.001;
+            }
             solid_depths.insert({depth, _solid.id});
         }
     }
@@ -325,7 +332,7 @@ float renderer::compute_solid_depth(const std::vector<projection>& projections) 
     float sum_depth = 0.0f;
 
     for(const projection& _projection : projections) {
-        sum_depth += _projection.distance;
+        sum_depth += _projection.distance_3f;
     }
 
     float average_depth = sum_depth / (float)projections.size();
