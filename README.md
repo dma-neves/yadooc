@@ -20,3 +20,7 @@
 
 - To build run: `mkdir build; cd build; cmake -DCMAKE_BUILD_TYPE=Release ..; make`
 - The executable will be located in `/build/bin/release`
+
+## Slopes and Backdrop Working
+
+![alt text](/other/doom_slope_backdrop.png)

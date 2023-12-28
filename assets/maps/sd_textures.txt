@@ -1,2 +1,4 @@
-1
+3
 starg1 ../../../assets/sprites/doom/STARGR1.png
+sky1 ../../../assets/sprites/doom/SKY1_triplicated_smudged.png
+ground ../../../assets/sprites/doom/ground.png

@@ -19,6 +19,9 @@ yadooc::yadooc() : window(sf::VideoMode(800, 800), "yadooc"), _camera(),  _rende
     _renderer.load_textures_file("../../../assets/maps/doom_stairs_textures.txt");
     _map.load_file("../../../assets/maps/doom_stairs.txt");
 
+    // _renderer.load_textures_file("../../../assets/maps/doom_stairs_textures.txt");
+    // _map.load_file("../../../assets/maps/doom_stairs_complex.txt");
+
     // _renderer.load_textures_file("../../../assets/maps/sd_textures.txt");
     // _map.load_file("../../../assets/maps/sd.txt");
 }
