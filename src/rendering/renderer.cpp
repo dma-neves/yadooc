@@ -86,7 +86,7 @@ void renderer::render_solid(sf::RenderWindow* window, solid& _solid, std::vector
     }
     bot_surface.setFillColor(sf::Color(64, 64, 64));
     top_surface.setFillColor(sf::Color(64, 64, 64));
-    // TODO: determine correct draw order
+    // TODO: determine correct draw order (doesn't matter if they are the same color)
     window->draw(bot_surface);
     window->draw(top_surface);
 
@@ -162,9 +162,89 @@ std::vector<projection> renderer::compute_solid_projections(sf::RenderWindow* wi
     return projections;
 }
 
+float renderer::compute_backdrop_camera_dir_vertical_offset() {
+
+    return tan(_camera->vertical_rot_angle) / plane_distance;
+}
+
+void renderer::render_backdrop(sf::RenderWindow* window, backdrop& _backdrop) {
+
+    sf::Texture* sf_texture = textures.find(_backdrop.texture_id)->second.sf_texture;
+    float texture_width = static_cast<float>(sf_texture->getSize().x);
+    float texture_height = static_cast<float>(sf_texture->getSize().y);
+
+    float vertical_camera_dir_offset = compute_backdrop_camera_dir_vertical_offset() ;
+    float window_scale_y = window->getSize().y / plane_height;
+    float vertical_window_offset = vertical_camera_dir_offset * window_scale_y;
+    float texture_scale_y = texture_height / plane_height;
+    float vertical_texture_offset = vertical_camera_dir_offset * texture_scale_y;
+
+    sf::VertexArray bdrop_vertices(sf::Quads, 4);
+    bdrop_vertices[0].position = sf::Vector2f(0, 0 + (vertical_window_offset < 0 ? vertical_window_offset : 0));
+    bdrop_vertices[1].position = sf::Vector2f(window->getSize().x, 0 + (vertical_window_offset < 0 ? vertical_window_offset : 0));
+    bdrop_vertices[2].position = sf::Vector2f(window->getSize().x, window->getSize().y / 2 + vertical_window_offset);
+    bdrop_vertices[3].position = sf::Vector2f(0, window->getSize().y / 2 + vertical_window_offset);
+
+
+    sf::Vector3f default_dir = DEFAULT_DIRECTION;
+    sf::Vector2f default_dir_2f(default_dir.x, default_dir.y);
+    sf::Vector2f camera_dir_2f(_camera->direction.x, _camera->direction.y);
+    float angle = angle_between_vectors(camera_dir_2f, default_dir_2f);
+    if(angle < 0)
+        angle += 2*M_PI;
+    angle = 2*M_PI - angle;
+
+    float offset = angle/(2.f*M_PI) * (2.f/3.f * texture_width);
+    if(offset >= texture_width * 2.f/3.f)
+        offset = texture_width / 3.f;
+    if(offset <= 0)
+        offset = texture_width / 3.f;
+
+    float y_slice = 0.5;
+
+    bdrop_vertices[0].texCoords = sf::Vector2f(offset, texture_height*y_slice - vertical_texture_offset);
+    bdrop_vertices[1].texCoords = sf::Vector2f(offset + texture_width / 3, texture_height*y_slice - vertical_texture_offset);
+    bdrop_vertices[2].texCoords = sf::Vector2f(offset + texture_width / 3, texture_height);
+    bdrop_vertices[3].texCoords = sf::Vector2f(offset, texture_height);
+
+    // Apply the shader to the texture
+    sf::RenderStates states;
+    states.texture = sf_texture;
+
+    // Draw the vertex array
+    window->draw(bdrop_vertices, states);
+}
+
+void renderer::render_floor(sf::RenderWindow* window, floor_t& floor) {
+
+    float vertical_camera_dir_offset = compute_backdrop_camera_dir_vertical_offset() ;
+    float window_scale_y = window->getSize().y / plane_height;
+    float vertical_window_offset = vertical_camera_dir_offset * window_scale_y;
+
+    sf::ConvexShape floor_shape;
+    floor_shape.setPointCount(4);
+    floor_shape.setPoint(0, sf::Vector2f(0,window->getSize().y/2 + vertical_window_offset));    
+    floor_shape.setPoint(1, sf::Vector2f(window->getSize().x,window->getSize().y/2 + vertical_window_offset));    
+    floor_shape.setPoint(2, sf::Vector2f(window->getSize().x,window->getSize().y + (vertical_window_offset > 0 ? vertical_window_offset : 0)));    
+    floor_shape.setPoint(3, sf::Vector2f(0,window->getSize().y + (vertical_window_offset > 0 ? vertical_window_offset : 0)));    
+
+    sf::Texture* sf_texture = textures.find(floor.texture_id)->second.sf_texture;
+    floor_shape.setTexture(sf_texture);
+
+    window->draw(floor_shape);
+}
+
 void renderer::render(sf::RenderWindow* window, map& _map) {
 
-    // TODO: sort solids in render order
+    if(_map.floor.active) {
+
+        render_floor(window, _map.floor);
+    }
+
+    if(_map._backdrop.active) {
+
+        render_backdrop(window, _map._backdrop);
+    }
 
     std::unordered_map<std::string, std::vector<projection>> solid_projections;
     std::map<float, std::string> solid_depths;
@@ -238,10 +318,6 @@ sf::Vector2f renderer::project_point(sf::Vector3f& point) {
     return sf::Vector2f(projection_plane_pos_x, projection_plane_pos_y + camera_vertical_rotation_offset);
 }
 
-// float renderer::projected_height(float distance, float real_height) {
-
-//     return 1.f / distance * real_height;
-// }
 
 float renderer::compute_solid_depth(const std::vector<projection>& projections) {
 

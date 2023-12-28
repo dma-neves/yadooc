@@ -1,6 +1,8 @@
-5
+7
 starg1 ../../../assets/sprites/doom/STARGR1.png
 step6 ../../../assets/sprites/doom/STEP6.png
 tekwall1 ../../../assets/sprites/doom/TEKWALL1.png
-tekwall4 ../../../assets/sprites/doom/TEKWALL4.png
+tekwall4 ../../../assets/sprites/doom/TEKWALL4_crop.png
 tekpillar ../../../assets/sprites/doom/tekpillar.png
+sky1 ../../../assets/sprites/doom/SKY1_triplicated_smudged.png
+ground ../../../assets/sprites/doom/ground.png

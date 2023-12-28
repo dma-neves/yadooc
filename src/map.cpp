@@ -12,6 +12,22 @@ void map::load_file(std::string file_path) {
         return;
     }
 
+    int num_floors;
+    file >> num_floors;
+
+    if(num_floors > 0) {
+        floor.active = true;
+        file >> floor.texture_id;
+    }
+
+    int num_backdrops;
+    file >> num_backdrops;
+
+    if(num_backdrops > 0) {
+        _backdrop.active = true;
+        file >> _backdrop.texture_id;
+    }
+
     int num_solids;
     file >> num_solids;
 

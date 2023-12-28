@@ -24,6 +24,9 @@ public:
 
 private:
 
+    float compute_backdrop_camera_dir_vertical_offset();
+    void render_floor(sf::RenderWindow* window, floor_t& floor);
+    void render_backdrop(sf::RenderWindow* window, backdrop& _backdrop);
     void render_solid(sf::RenderWindow* window, solid& _solid, std::vector<projection>& projections);
     void render_vertical_surface(sf::RenderWindow* window, vertical_surface& surface);
     sf::Vector2f project_point(sf::Vector3f& point);
